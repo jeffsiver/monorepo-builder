@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from monorepo_builder.configuration import ConfigurationManager, Configuration
 
@@ -48,14 +48,19 @@ class ProjectFileListBuilder:
         return True
 
 
-@dataclass(frozen=True)
+@dataclass
 class Project:
     project_path: str
     file_list: List[File] = field(default_factory=list)
+    needs_build: bool = field(default=False)
 
     @property
     def path(self) -> Path:
         return Path(self.project_path)
+
+    @property
+    def name(self) -> str:
+        return self.path.name
 
     @property
     def project_type(self) -> ProjectType:
@@ -63,28 +68,21 @@ class Project:
             return ProjectType.Library
         return ProjectType.Standard
 
+    def identify_if_build_needed(self, project_from_last_run: "Optional[Project]"):
+        self.needs_build = self._is_build_needed(project_from_last_run)
 
-class ProjectList:
-    def build_project_list(self) -> List[Project]:
-        project_list: List[Project] = []
-        self._get_library_projects(project_list)
-        self._get_platform_projects(project_list)
-        return project_list
-
-    def _get_library_projects(self, project_list: List[Project]):
-        library_root_folder = f"{ConfigurationManager().get().monorepo_root_folder}/{ConfigurationManager().get().library_folder_name}"
-        project_list.extend(ProjectListBuilder().get_projects(library_root_folder))
-
-    def _get_platform_projects(self, project_list: List[Project]):
-        for standard_folder_name in ConfigurationManager().get().standard_folder_list:
-            standard_folder = f"{ConfigurationManager().get().monorepo_root_folder}/{standard_folder_name}"
-            project_list.extend(ProjectListBuilder().get_projects(standard_folder))
-
-
-class ProjectListBuilder:
-    def get_projects(self, folder) -> List[Project]:
-        project_list: List[Project] = []
-        for project in Path(folder).iterdir():
-            if project.is_dir():
-                project_list.append(Project(project_path=str(project)))
-        return project_list
+    def _is_build_needed(self, project_from_last_run: "Optional[Project]") -> bool:
+        if not project_from_last_run:
+            return True
+        if len(self.file_list) != len(project_from_last_run.file_list):
+            return True
+        sorted_current_file_list = sorted(self.file_list, key=lambda x: x.file)
+        sorted_last_file_list = sorted(
+            project_from_last_run.file_list, key=lambda x: x.file
+        )
+        for current, previous in zip(sorted_current_file_list, sorted_last_file_list):
+            if current.file != previous.file:
+                return True
+            if current.last_changed_time != previous.last_changed_time:
+                return True
+        return False

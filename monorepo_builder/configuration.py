@@ -44,6 +44,7 @@ class Configuration:
     )
     skip_hidden_files: bool = True
     skip_hidden_folders: bool = True
+    project_list_filename: str = ".projectlist"
 
 
 class ConfigurationManager:

@@ -47,7 +47,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
-monorepo_builder/.pytest_cache/
+.pytest_cache/
 
 # Translations
 *.mo
