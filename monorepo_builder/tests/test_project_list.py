@@ -4,13 +4,13 @@ from unittest.mock import mock_open, patch, MagicMock, call
 from monorepo_builder.configuration import ConfigurationManager, Configuration
 from monorepo_builder.project_list import (
     ProjectListFactory,
-    ProjectList,
     ProjectListManager,
+    Projects,
 )
-from monorepo_builder.projects import ProjectFileListBuilder, File, Project
+from monorepo_builder.projects import ProjectFileListBuilder, File, Project, ProjectType
 
 
-class TestProjectList:
+class TestProjects:
     def test_build_project_list(self, mocker):
         project1 = MagicMock(spec=Project)
         project2 = MagicMock(spec=Project)
@@ -29,16 +29,42 @@ class TestProjectList:
                 standard_folder_list=["folder1", "folder2"],
             ),
         )
-        result = ProjectList().build_current_project_list()
-        assert len(result) == 3
-        assert project1 in result
-        assert project2 in result
-        assert project3 in result
+
+        projects = Projects.projects_factory()
+
+        assert len(projects) == 3
+        assert project1 in projects
+        assert project2 in projects
+        assert project3 in projects
         assert get_projects_mock.call_args_list == [
             call("root/lib"),
             call("root/folder1"),
             call("root/folder2"),
         ]
+
+    def test_library_projects_property(self, mocker):
+        lib_project = MagicMock(spec=Project, project_type=ProjectType.Library)
+        projects = Projects()
+        projects.extend(
+            [lib_project, MagicMock(spec=Project, project_type=ProjectType.Standard)]
+        )
+
+        library_projects = projects.library_projects
+
+        assert len(library_projects) == 1
+        assert lib_project in library_projects
+
+    def test_standard_projects_property(self, mocker):
+        std_project = MagicMock(spec=Project, project_type=ProjectType.Standard)
+        projects = Projects()
+        projects.extend(
+            [std_project, MagicMock(spec=Project, project_type=ProjectType.Library)]
+        )
+
+        result = projects.standard_projects
+
+        assert len(result) == 1
+        assert std_project in result
 
 
 class TestProjectListManager:

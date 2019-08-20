@@ -3,39 +3,48 @@ from pathlib import Path
 from typing import List
 
 from monorepo_builder.configuration import ConfigurationManager
-from monorepo_builder.projects import Project, ProjectFileListBuilder
+from monorepo_builder.projects import Project, ProjectFileListBuilder, ProjectType
 
 
-class ProjectList:
-    def build_current_project_list(self) -> List[Project]:
-        project_list: List[Project] = []
-        self._get_library_projects(project_list)
-        self._get_standard_projects(project_list)
-        return project_list
+class Projects(list, List[Project]):
+    @property
+    def library_projects(self) -> List[Project]:
+        return [
+            project for project in self if project.project_type == ProjectType.Library
+        ]
 
-    def _get_library_projects(self, project_list: List[Project]):
+    @property
+    def standard_projects(self) -> List[Project]:
+        return [
+            project for project in self if project.project_type == ProjectType.Standard
+        ]
+
+    @staticmethod
+    def projects_factory():
+        projects = Projects()
+        projects._get_library_projects()
+        projects._get_standard_projects()
+        return projects
+
+    def _get_library_projects(self,):
         library_root_folder = f"{ConfigurationManager().get().monorepo_root_folder}/{ConfigurationManager().get().library_folder_name}"
-        project_list.extend(
-            ProjectListFactory().get_projects_in_folder(library_root_folder)
-        )
+        self.extend(ProjectListFactory().get_projects_in_folder(library_root_folder))
 
-    def _get_standard_projects(self, project_list: List[Project]):
+    def _get_standard_projects(self,):
         for standard_folder_name in ConfigurationManager().get().standard_folder_list:
             standard_folder = f"{ConfigurationManager().get().monorepo_root_folder}/{standard_folder_name}"
-            project_list.extend(
-                ProjectListFactory().get_projects_in_folder(standard_folder)
-            )
+            self.extend(ProjectListFactory().get_projects_in_folder(standard_folder))
 
 
 class ProjectListManager:
-    def load_list_from_last_successful_run(self) -> List[Project]:
+    def load_list_from_last_successful_run(self) -> Projects:
         file = Path(ConfigurationManager.get().project_list_filename)
         if not file.exists():
-            return []
+            return Projects()
         with open(ConfigurationManager.get().project_list_filename, "rb") as file:
             return pickle.loads(file.read())
 
-    def save_project_list(self, project_list: List[Project]):
+    def save_project_list(self, project_list: Projects):
         with open(ConfigurationManager.get().project_list_filename, "wb") as file:
             file.write(pickle.dumps(project_list))
 
