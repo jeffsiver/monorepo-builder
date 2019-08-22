@@ -69,8 +69,6 @@ class TestProjectBuildRequests:
         assert requests.success is False
 
 
-
-
 class TestBuildExecutor:
     def test_execute_builds(self, mocker):
         run_build_mock = mocker.patch.object(BuildExecutor, "run_build")
@@ -88,6 +86,7 @@ class TestBuildExecutor:
         ]
 
     def test_run_build_successful(self, mocker):
+        mocker.patch("monorepo_builder.build_executor.write_to_console")
         subprocess_mock = mocker.patch("monorepo_builder.build_executor.subprocess")
         subprocess_mock.PIPE = "pipe"
         subprocess_mock.STDOUT = "stdout"
@@ -104,10 +103,11 @@ class TestBuildExecutor:
         assert build_request.build_status == BuildRequestStatus.Complete
         assert build_request.console_output == ["one", "two"]
         subprocess_mock.run.assert_called_once_with(
-            "here/build.sh", stdout="pipe", stderr="stdout"
+            ["./build.sh"], cwd="here", stdout="pipe", stderr="stdout"
         )
 
     def test_run_build_failed(self, mocker):
+        mocker.patch("monorepo_builder.build_executor.write_to_console")
         subprocess_mock = mocker.patch("monorepo_builder.build_executor.subprocess")
         subprocess_mock.PIPE = "pipe"
         subprocess_mock.STDOUT = "stdout"
@@ -124,7 +124,7 @@ class TestBuildExecutor:
         assert build_request.build_status == BuildRequestStatus.Complete
         assert build_request.console_output == ["one", "two"]
         subprocess_mock.run.assert_called_once_with(
-            "here/build.sh", stdout="pipe", stderr="stdout"
+            ["./build.sh"], cwd="here", stdout="pipe", stderr="stdout"
         )
 
     def test_run_build_not_needed(self, mocker):

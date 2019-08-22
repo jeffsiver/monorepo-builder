@@ -9,7 +9,9 @@ from monorepo_builder.runner import BuildRunner, Runner
 class TestRunner:
     def test_run_build(self, mocker):
         projects = MagicMock(spec=Projects)
-        gather_projects_mock = mocker.patch.object(Runner, "gather_projects", return_value=projects)
+        gather_projects_mock = mocker.patch.object(
+            Runner, "gather_projects", return_value=projects
+        )
         requests = MagicMock(spec=ProjectBuildRequests)
         do_builds_mock = mocker.patch.object(Runner, "do_builds", return_value=requests)
 
@@ -21,7 +23,9 @@ class TestRunner:
     def test_gather_projects(self, mocker):
         projects = MagicMock(spec=Projects)
         mocker.patch.object(Projects, "projects_factory", return_value=projects)
-        identify_projects_needing_build_mock = mocker.patch.object(BuildRunner, "identify_projects_needing_build")
+        identify_projects_needing_build_mock = mocker.patch.object(
+            BuildRunner, "identify_projects_needing_build"
+        )
 
         result = Runner().gather_projects()
 
@@ -31,21 +35,31 @@ class TestRunner:
     def test_do_builds_all_succeed(self, mocker):
         projects = MagicMock(spec=Projects)
         requests = MagicMock(spec=ProjectBuildRequests, success=True)
-        build_library_projects_mock = mocker.patch.object(BuildRunner, "build_library_projects", return_value=requests)
-        build_standard_projects_mock = mocker.patch.object(BuildRunner, "build_standard_projects")
+        build_library_projects_mock = mocker.patch.object(
+            BuildRunner, "build_library_projects", return_value=requests
+        )
+        build_standard_projects_mock = mocker.patch.object(
+            BuildRunner, "build_standard_projects"
+        )
 
         result = Runner().do_builds(projects)
 
         assert result is requests
         build_library_projects_mock.assert_called_once_with(projects)
         build_standard_projects_mock.assert_called_once_with(projects)
-        requests.extend.assert_called_once_with(build_standard_projects_mock.return_value)
+        requests.extend.assert_called_once_with(
+            build_standard_projects_mock.return_value
+        )
 
     def test_do_builds_library_builds_fail(self, mocker):
         projects = MagicMock(spec=Projects)
         requests = MagicMock(spec=ProjectBuildRequests, success=False)
-        build_library_projects_mock = mocker.patch.object(BuildRunner, "build_library_projects", return_value=requests)
-        build_standard_projects_mock = mocker.patch.object(BuildRunner, "build_standard_projects")
+        build_library_projects_mock = mocker.patch.object(
+            BuildRunner, "build_library_projects", return_value=requests
+        )
+        build_standard_projects_mock = mocker.patch.object(
+            BuildRunner, "build_standard_projects"
+        )
 
         result = Runner().do_builds(projects)
 
@@ -64,8 +78,12 @@ class TestRunner:
             requests.success = False
             return std_requests
 
-        build_library_projects_mock = mocker.patch.object(BuildRunner, "build_library_projects", return_value=requests)
-        build_standard_projects_mock = mocker.patch.object(BuildRunner, "build_standard_projects", side_effect=handle_standard_return)
+        build_library_projects_mock = mocker.patch.object(
+            BuildRunner, "build_library_projects", return_value=requests
+        )
+        build_standard_projects_mock = mocker.patch.object(
+            BuildRunner, "build_standard_projects", side_effect=handle_standard_return
+        )
 
         result = Runner().do_builds(projects)
 

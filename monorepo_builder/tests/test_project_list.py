@@ -311,6 +311,7 @@ class TestProjectFileListFactory:
 
 class TestProjectListFactory:
     def test_get_projects_from_folder(self, mocker):
+        mocker.patch("monorepo_builder.build_executor.write_to_console")
         path1_mock = MagicMock(
             **{"is_dir.return_value": True, "__str__.return_value": "first"}
         )
@@ -328,7 +329,7 @@ class TestProjectListFactory:
                     file1_mock,
                     path2_mock,
                 ],
-                "return_value.exists.return_value": True
+                "return_value.exists.return_value": True,
             },
         )
         project1_mock = MagicMock(spec=Project)
@@ -344,14 +345,15 @@ class TestProjectListFactory:
         result = ProjectListFactory().get_projects_in_folder("start")
 
         assert result == [project1_mock, project2_mock]
-        path_mock.assert_called_once_with("start")
+        assert path_mock.call_args_list == [call("start"), call("start")]
         assert project_mock.call_args_list == [
             call(project_path="first", file_list="numberone"),
             call(project_path="second", file_list="numbertwo"),
         ]
-        assert file_builder_mock.call_args_list == [call("first"), call("second")]
+        assert file_builder_mock.call_args_list == [call(path1_mock), call(path2_mock)]
 
     def test_get_projects_in_folder_when_folder_not_found(self, mocker):
+        mocker.patch("monorepo_builder.build_executor.write_to_console")
         path_mock = mocker.patch.object(Path, "__init__", return_value=None)
         mocker.patch.object(Path, "exists", return_value=False)
 

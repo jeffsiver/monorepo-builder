@@ -33,10 +33,7 @@ class ProjectBuildRequests(list, List[ProjectBuildRequest]):
         build_requests = ProjectBuildRequests()
         library_projects = projects.library_projects
         build_requests.extend(
-            [
-                ProjectBuildRequest(project=project)
-                for project in library_projects
-            ]
+            [ProjectBuildRequest(project=project) for project in library_projects]
         )
         return build_requests
 
@@ -65,7 +62,9 @@ class BuildExecutor:
         return project_build_requests
 
     def run_build(self, project_build_request: ProjectBuildRequest):
-        write_to_console(f"{project_build_request.project.name} Building", color="blue", bold=True)
+        write_to_console(
+            f"{project_build_request.project.name} Building", color="blue", bold=True
+        )
         if not project_build_request.project.needs_build:
             project_build_request.build_status = BuildRequestStatus.NotNeeded
             write_to_console("Build not needed")
@@ -75,7 +74,7 @@ class BuildExecutor:
             ["./build.sh"],
             cwd=project_build_request.project.project_path,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT
+            stderr=subprocess.STDOUT,
         )
         project_build_request.build_status = BuildRequestStatus.Complete
         project_build_request.run_successful = result.returncode == 0
