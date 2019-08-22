@@ -1,16 +1,39 @@
-from typing import List, Optional
+from typing import Optional
+
+import click
 
 from monorepo_builder.build_executor import BuildExecutor, ProjectBuildRequests
+from monorepo_builder.console import write_to_console
 from monorepo_builder.project_list import ProjectListManager, Projects
 from monorepo_builder.projects import Project
 
 
+@click.command()
 def run_build():
-    build_runner = BuildRunner()
-    projects = Projects.projects_factory()
-    build_runner.identify_projects_needing_build(projects)
-    library_results = build_runner.build_library_projects(projects)
-    standard_results = build_runner.build_standard_projects(projects)
+    Runner.run()
+
+
+class Runner:
+    @staticmethod
+    def run():
+        write_to_console("Starting the build", color="blue")
+        runner = Runner()
+        projects = runner.gather_projects()
+        build_requests = runner.do_builds(projects)
+
+    def gather_projects(self) -> Projects:
+        projects = Projects.projects_factory()
+        BuildRunner().identify_projects_needing_build(projects)
+        return projects
+
+    def do_builds(self, projects: Projects) -> ProjectBuildRequests:
+        build_requests = BuildRunner().build_library_projects(projects)
+        if build_requests.success:
+            build_requests.extend(BuildRunner().build_standard_projects(projects))
+        return build_requests
+
+    def finish_builds(self, projects: Projects, build_requests: ProjectBuildRequests):
+        pass
 
 
 class BuildRunner:
@@ -41,3 +64,7 @@ class BuildRunner:
         return BuildExecutor().execute_builds(
             ProjectBuildRequests.standard_projects(projects)
         )
+
+
+if __name__ == "__main__":
+    run_build()

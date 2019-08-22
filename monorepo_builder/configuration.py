@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List
 
 
@@ -29,9 +30,14 @@ def create_default_extensions_to_skip():
     return ["egg-info"]
 
 
+def get_current_folder():
+    return Path.cwd()
+
+
 @dataclass
 class Configuration:
-    monorepo_root_folder: str = None
+    # monorepo_root_folder: str = field(default_factory=get_current_folder)
+    monorepo_root_folder: str = "/Users/jsiver/projects/monorepo-builder/example"
     library_folder_name: str = "libraries"
     standard_folder_list: List[str] = field(
         default_factory=create_default_standard_folder_list

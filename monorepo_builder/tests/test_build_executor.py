@@ -44,6 +44,32 @@ class TestProjectBuildRequests:
         assert req in result
         project_build_request_mock.assert_called_once_with(project=std)
 
+    def test_success_all_successful(self):
+        request1 = MagicMock(spec=ProjectBuildRequest, run_successful=True)
+        request2 = MagicMock(spec=ProjectBuildRequest, run_successful=True)
+        requests = ProjectBuildRequests()
+        requests.extend([request1, request2])
+
+        assert requests.success is True
+
+    def test_success_all_failed(self):
+        request1 = MagicMock(spec=ProjectBuildRequest, run_successful=False)
+        request2 = MagicMock(spec=ProjectBuildRequest, run_successful=False)
+        requests = ProjectBuildRequests()
+        requests.extend([request1, request2])
+
+        assert requests.success is False
+
+    def test_success_some_success_some_failed(self):
+        request1 = MagicMock(spec=ProjectBuildRequest, run_successful=False)
+        request2 = MagicMock(spec=ProjectBuildRequest, run_successful=True)
+        requests = ProjectBuildRequests()
+        requests.extend([request1, request2])
+
+        assert requests.success is False
+
+
+
 
 class TestBuildExecutor:
     def test_execute_builds(self, mocker):

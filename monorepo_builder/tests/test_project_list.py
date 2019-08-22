@@ -327,7 +327,8 @@ class TestProjectListFactory:
                     path1_mock,
                     file1_mock,
                     path2_mock,
-                ]
+                ],
+                "return_value.exists.return_value": True
             },
         )
         project1_mock = MagicMock(spec=Project)
@@ -349,3 +350,12 @@ class TestProjectListFactory:
             call(project_path="second", file_list="numbertwo"),
         ]
         assert file_builder_mock.call_args_list == [call("first"), call("second")]
+
+    def test_get_projects_in_folder_when_folder_not_found(self, mocker):
+        path_mock = mocker.patch.object(Path, "__init__", return_value=None)
+        mocker.patch.object(Path, "exists", return_value=False)
+
+        result = ProjectListFactory().get_projects_in_folder("here")
+
+        assert result == []
+        path_mock.assert_called_once_with("here")

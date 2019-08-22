@@ -3,6 +3,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Optional
 
+import click
+
+from monorepo_builder.console import write_to_console
 from monorepo_builder.project_list import Projects
 from monorepo_builder.projects import Project
 
@@ -21,17 +24,18 @@ class ProjectBuildRequest:
         default=BuildRequestStatus.NotStarted, init=False
     )
     run_successful: Optional[bool] = field(default=None, init=False)
-    console_output: List[str] = field(default_factory=List, init=False)
+    console_output: List[str] = field(default_factory=list, init=False)
 
 
 class ProjectBuildRequests(list, List[ProjectBuildRequest]):
     @staticmethod
     def library_projects(projects: Projects) -> "ProjectBuildRequests":
         build_requests = ProjectBuildRequests()
+        library_projects = projects.library_projects
         build_requests.extend(
             [
                 ProjectBuildRequest(project=project)
-                for project in projects.library_projects
+                for project in library_projects
             ]
         )
         return build_requests
@@ -47,6 +51,10 @@ class ProjectBuildRequests(list, List[ProjectBuildRequest]):
         )
         return build_requests
 
+    @property
+    def success(self):
+        return all([request.run_successful for request in self])
+
 
 class BuildExecutor:
     def execute_builds(
@@ -57,14 +65,19 @@ class BuildExecutor:
         return project_build_requests
 
     def run_build(self, project_build_request: ProjectBuildRequest):
+        write_to_console(f"{project_build_request.project.name} Building", color="blue", bold=True)
         if not project_build_request.project.needs_build:
             project_build_request.build_status = BuildRequestStatus.NotNeeded
+            write_to_console("Build not needed")
             return
 
-        build_command = f"{project_build_request.project.project_path}/build.sh"
         result = subprocess.run(
-            build_command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+            ["./build.sh"],
+            cwd=project_build_request.project.project_path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
         )
         project_build_request.build_status = BuildRequestStatus.Complete
         project_build_request.run_successful = result.returncode == 0
         project_build_request.console_output = result.stdout
+        write_to_console(project_build_request.console_output)

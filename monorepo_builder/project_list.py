@@ -44,13 +44,16 @@ class ProjectListManager:
         with open(ConfigurationManager.get().project_list_filename, "rb") as file:
             return pickle.loads(file.read())
 
-    def save_project_list(self, project_list: Projects):
+    def save_project_list(self, projects: Projects):
         with open(ConfigurationManager.get().project_list_filename, "wb") as file:
-            file.write(pickle.dumps(project_list))
+            file.write(pickle.dumps(projects))
 
 
 class ProjectListFactory:
     def get_projects_in_folder(self, folder) -> List[Project]:
+        if not Path(folder).exists():
+            return []
+
         project_list: List[Project] = []
         for project in Path(folder).iterdir():
             if project.is_dir():
@@ -58,7 +61,7 @@ class ProjectListFactory:
                 project_list.append(
                     Project(
                         project_path=project_path,
-                        file_list=ProjectFileListBuilder().build(project_path),
+                        file_list=ProjectFileListBuilder().build(project),
                     )
                 )
         return project_list
