@@ -110,18 +110,14 @@ class ConfigurationManager:
         return cls.configuration
 
     @classmethod
-    def load(cls, configuration_filename: str) -> Configuration:
+    def load(cls, configuration_filename: str):
         if not Path(configuration_filename).exists():
             write_to_console(
                 "Configuration file not found; default configuration used", color="red"
             )
             cls.configuration = Configuration()
-            return cls.configuration
+            return
 
-        read_configuration = json.load(configuration_filename)
+        with open(configuration_filename, "r") as configuration_file:
+            read_configuration = json.load(configuration_file)
         cls.configuration = Configuration.build_from_settings(read_configuration)
-        return cls.configuration
-
-
-if __name__ == "__main__":
-    ConfigurationManager.load("t")

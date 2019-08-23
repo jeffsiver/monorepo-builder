@@ -94,7 +94,7 @@ class TestConfigurationManager:
 
         result = ConfigurationManager.load("test_file")
 
-        assert result is configuration_mock.return_value
+        assert ConfigurationManager.configuration is configuration_mock.return_value
         path_mock.assert_called_once_with("test_file")
 
     def test_load_configuration(self, mocker):
@@ -102,17 +102,20 @@ class TestConfigurationManager:
         path_mock = mocker.patch.object(Path, "__init__", return_value=None)
         mocker.patch.object(Path, "exists", return_value=True)
         read_configuration = {"test": "value"}
-        load_mock = mocker.patch(
+        json_load_mock = mocker.patch(
             "monorepo_builder.configuration.json.load", return_value=read_configuration
         )
         configuration = MagicMock(spec=Configuration)
         build_from_settings_mock = mocker.patch.object(
             Configuration, "build_from_settings", return_value=configuration
         )
+        file = mock_open()
+        with patch("builtins.open", file):
+            ConfigurationManager.load("configuration file")
 
-        result = ConfigurationManager.load("configuration file")
+        file.assert_called_with("configuration file", "r")
+        # json_load_mock.assert_called_once_with(file)
 
-        assert result is configuration
         path_mock.assert_called_once_with("configuration file")
-        load_mock.assert_called_once_with("configuration file")
         build_from_settings_mock.assert_called_once_with(read_configuration)
+        assert ConfigurationManager.configuration is configuration

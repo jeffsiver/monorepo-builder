@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 from monorepo_builder.build_executor import ProjectBuildRequests
+from monorepo_builder.configuration import ConfigurationManager
 from monorepo_builder.project_list import ProjectListManager, Projects
 from monorepo_builder.projects import Project
 from monorepo_builder.runner import BuildRunner, Runner
@@ -15,12 +16,14 @@ class TestRunner:
         requests = MagicMock(spec=ProjectBuildRequests)
         do_builds_mock = mocker.patch.object(Runner, "do_builds", return_value=requests)
         finish_builds_mock = mocker.patch.object(Runner, "finish_builds")
+        configuration_load_mock = mocker.patch.object(ConfigurationManager, "load")
 
         Runner.run()
 
         gather_projects_mock.assert_called_once()
         do_builds_mock.assert_called_once_with(projects)
         finish_builds_mock.assert_called_once_with(projects, requests)
+        configuration_load_mock.assert_called_once_with("config.json")
 
     def test_gather_projects(self, mocker):
         mocker.patch("monorepo_builder.runner.write_to_console")

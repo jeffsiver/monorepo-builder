@@ -3,6 +3,7 @@ from typing import Optional
 import click
 
 from monorepo_builder.build_executor import BuildExecutor, ProjectBuildRequests
+from monorepo_builder.configuration import ConfigurationManager
 from monorepo_builder.console import write_to_console
 from monorepo_builder.project_list import ProjectListManager, Projects
 from monorepo_builder.projects import Project
@@ -17,6 +18,8 @@ class Runner:
     @staticmethod
     def run():
         write_to_console("Starting the build", color="blue")
+        write_to_console("Loading default configuration", color="blue")
+        ConfigurationManager.load("config.json")
         runner = Runner()
         projects = runner.gather_projects()
         build_requests = runner.do_builds(projects)

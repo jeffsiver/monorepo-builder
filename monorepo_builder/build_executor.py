@@ -33,7 +33,11 @@ class ProjectBuildRequests(list, List[ProjectBuildRequest]):
         build_requests = ProjectBuildRequests()
         library_projects = projects.library_projects
         build_requests.extend(
-            [ProjectBuildRequest(project=project) for project in library_projects]
+            [
+                ProjectBuildRequest(project=project)
+                for project in library_projects
+                if project.needs_build
+            ]
         )
         return build_requests
 
@@ -44,13 +48,14 @@ class ProjectBuildRequests(list, List[ProjectBuildRequest]):
             [
                 ProjectBuildRequest(project=project)
                 for project in projects.standard_projects
+                if project.needs_build
             ]
         )
         return build_requests
 
     @property
     def success(self):
-        return all([request.run_successful for request in self])
+        return len(self) == 0 or all([request.run_successful for request in self])
 
 
 class BuildExecutor:

@@ -7,6 +7,6 @@ setup(
     install_requires=["Click"],
     entry_points="""
         [console_scripts]
-        run=monorepo_builder.runner:run_build
+        run-build=monorepo_builder.runner:run_build
     """,
 )

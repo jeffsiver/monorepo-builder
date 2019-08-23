@@ -12,11 +12,16 @@ from monorepo_builder.projects import Project, ProjectType
 
 
 class TestProjectBuildRequests:
-    def test_library_projects_filters_as_expected(self, mocker):
-        lib = MagicMock(spec=Project, project_type=ProjectType.Library)
+    def test_library_projects_filters_to_library_projects_needing_build(self, mocker):
+        lib1 = MagicMock(
+            spec=Project, project_type=ProjectType.Library, needs_build=True
+        )
+        lib2 = MagicMock(
+            spec=Project, project_type=ProjectType.Library, needs_build=False
+        )
         std = MagicMock(spec=Project, project_type=ProjectType.Standard)
         projects = Projects()
-        projects.extend([lib, std])
+        projects.extend([lib1, lib2, std])
         req = MagicMock(spec=ProjectBuildRequest)
         project_build_request_mock = mocker.patch(
             "monorepo_builder.build_executor.ProjectBuildRequest", return_value=req
@@ -26,13 +31,18 @@ class TestProjectBuildRequests:
 
         assert len(result) == 1
         assert req in result
-        project_build_request_mock.assert_called_once_with(project=lib)
+        project_build_request_mock.assert_called_once_with(project=lib1)
 
     def test_standard_projects_filters_as_expected(self, mocker):
         lib = MagicMock(spec=Project, project_type=ProjectType.Library)
-        std = MagicMock(spec=Project, project_type=ProjectType.Standard)
+        std1 = MagicMock(
+            spec=Project, project_type=ProjectType.Standard, needs_build=True
+        )
+        std2 = MagicMock(
+            spec=Project, project_type=ProjectType.Standard, needs_build=False
+        )
         projects = Projects()
-        projects.extend([lib, std])
+        projects.extend([lib, std1, std2])
         req = MagicMock(spec=ProjectBuildRequest)
         project_build_request_mock = mocker.patch(
             "monorepo_builder.build_executor.ProjectBuildRequest", return_value=req
@@ -42,13 +52,18 @@ class TestProjectBuildRequests:
 
         assert len(result) == 1
         assert req in result
-        project_build_request_mock.assert_called_once_with(project=std)
+        project_build_request_mock.assert_called_once_with(project=std1)
 
     def test_success_all_successful(self):
         request1 = MagicMock(spec=ProjectBuildRequest, run_successful=True)
         request2 = MagicMock(spec=ProjectBuildRequest, run_successful=True)
         requests = ProjectBuildRequests()
         requests.extend([request1, request2])
+
+        assert requests.success is True
+
+    def test_success_true_when_no_projects_run(self):
+        requests = ProjectBuildRequests()
 
         assert requests.success is True
 

@@ -1,0 +1,6 @@
+{
+  "config": {
+    "libraryFolder": "libraries",
+    "standardFolders": ["platform", "web"]
+  }
+}
