@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from monorepo_builder.build_executor import ProjectBuildRequests, BuildExecutor
+from monorepo_builder.build_executor import ProjectBuildRequests
 from monorepo_builder.project_list import ProjectListManager, Projects
 from monorepo_builder.projects import Project
 from monorepo_builder.runner import BuildRunner, Runner
@@ -14,13 +14,16 @@ class TestRunner:
         )
         requests = MagicMock(spec=ProjectBuildRequests)
         do_builds_mock = mocker.patch.object(Runner, "do_builds", return_value=requests)
+        finish_builds_mock = mocker.patch.object(Runner, "finish_builds")
 
         Runner.run()
 
         gather_projects_mock.assert_called_once()
         do_builds_mock.assert_called_once_with(projects)
+        finish_builds_mock.assert_called_once_with(projects, requests)
 
     def test_gather_projects(self, mocker):
+        mocker.patch("monorepo_builder.runner.write_to_console")
         projects = MagicMock(spec=Projects)
         mocker.patch.object(Projects, "projects_factory", return_value=projects)
         identify_projects_needing_build_mock = mocker.patch.object(
@@ -33,6 +36,7 @@ class TestRunner:
         identify_projects_needing_build_mock.assert_called_once_with(projects)
 
     def test_do_builds_all_succeed(self, mocker):
+        mocker.patch("monorepo_builder.runner.write_to_console")
         projects = MagicMock(spec=Projects)
         requests = MagicMock(spec=ProjectBuildRequests, success=True)
         build_library_projects_mock = mocker.patch.object(
@@ -52,6 +56,7 @@ class TestRunner:
         )
 
     def test_do_builds_library_builds_fail(self, mocker):
+        mocker.patch("monorepo_builder.runner.write_to_console")
         projects = MagicMock(spec=Projects)
         requests = MagicMock(spec=ProjectBuildRequests, success=False)
         build_library_projects_mock = mocker.patch.object(
@@ -69,6 +74,7 @@ class TestRunner:
         requests.extend.assert_not_called()
 
     def test_do_builds_library_builds_succeed_standard_builds_fail(self, mocker):
+        mocker.patch("monorepo_builder.runner.write_to_console")
         requests = MagicMock(spec=ProjectBuildRequests, success=True)
         projects = MagicMock(spec=Projects)
 
@@ -91,6 +97,39 @@ class TestRunner:
         build_library_projects_mock.assert_called_once_with(projects)
         build_standard_projects_mock.assert_called_once_with(projects)
         requests.extend.assert_called_once_with(std_requests)
+
+    def test_finish_builds_on_success(self, mocker):
+        projects = MagicMock(spec=Projects)
+        requests = MagicMock(spec=ProjectBuildRequests, success=True)
+        save_project_list_mock = mocker.patch(ProjectListManager, "save_project_list")
+
+        Runner().finish_builds(projects, requests)
+
+        save_project_list_mock.assert_called_once_with(projects)
+
+    def test_finish_builds_on_success(self, mocker):
+        mocker.patch("monorepo_builder.runner.write_to_console")
+        projects = MagicMock(spec=Projects)
+        requests = MagicMock(spec=ProjectBuildRequests, success=True)
+        save_project_list_mock = mocker.patch.object(
+            ProjectListManager, "save_project_list"
+        )
+
+        Runner().finish_builds(projects, requests)
+
+        save_project_list_mock.assert_called_once_with(projects)
+
+    def test_finish_builds_on_failure(self, mocker):
+        mocker.patch("monorepo_builder.runner.write_to_console")
+        projects = MagicMock(spec=Projects)
+        requests = MagicMock(spec=ProjectBuildRequests, success=False)
+        save_project_list_mock = mocker.patch.object(
+            ProjectListManager, "save_project_list"
+        )
+
+        Runner().finish_builds(projects, requests)
+
+        save_project_list_mock.assert_not_called()
 
 
 class TestBuildRunner:

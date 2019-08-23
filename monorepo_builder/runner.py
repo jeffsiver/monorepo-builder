@@ -20,9 +20,12 @@ class Runner:
         runner = Runner()
         projects = runner.gather_projects()
         build_requests = runner.do_builds(projects)
+        runner.finish_builds(projects, build_requests)
 
     def gather_projects(self) -> Projects:
+        write_to_console("Creating Project List", color="blue")
         projects = Projects.projects_factory()
+        write_to_console("Identifying projects requiring a build")
         BuildRunner().identify_projects_needing_build(projects)
         return projects
 
@@ -33,7 +36,12 @@ class Runner:
         return build_requests
 
     def finish_builds(self, projects: Projects, build_requests: ProjectBuildRequests):
-        pass
+        if build_requests.success:
+            write_to_console("All builds completed successfully, build file updated")
+            ProjectListManager().save_project_list(projects)
+        else:
+            write_to_console("One of more builds failed", color="red")
+        write_to_console("Completed", color="blue")
 
 
 class BuildRunner:

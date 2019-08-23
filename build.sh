@@ -50,12 +50,12 @@ pytest --cov-report term --cov=monorepo_builder monorepo_builder/tests
 echo "Reformatting"
 black .
 
-#rm -rf ./dist
-#python setup.py bdist_wheel
-#if [[ $? -gt 0 ]]
-#then
-#    echo "Setup had issues"
-#    exit 16
-#fi
+rm -rf ./dist
+python setup.py bdist_wheel
+if [[ $? -gt 0 ]]
+then
+    echo "Setup had issues"
+    exit 16
+fi
 
 echo "Build completed successfully"

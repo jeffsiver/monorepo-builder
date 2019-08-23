@@ -112,3 +112,4 @@ pyvenv.cfg
 
 # Mac
 .DS_Store
+.projectlist
