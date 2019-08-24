@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 function reset_virtual_environment() {
     echo "Removing current virtual environment"
@@ -28,17 +28,18 @@ setup_virtual_environment
 rm -rf reports
 mkdir reports
 
+echo "Reformatting"
+black .
+
 echo "Running pytest"
-pytest
-if [[ $? -gt 0 ]]
+if ! pytest
 then
     echo "One or more unit tests failed"
     exit 16
 fi
 
 echo "Running bandit"
-bandit -f screen customer_id_management
-if [[ $? -gt 0 ]]
+if ! bandit -f screen customer_id_management
 then
     echo "bandit found issues"
     exit 16
@@ -46,16 +47,5 @@ fi
 
 echo "Collecting test coverage"
 pytest --cov-report term --cov=monorepo_builder monorepo_builder/tests
-
-echo "Reformatting"
-black .
-
-rm -rf ./dist
-python setup.py bdist_wheel
-if [[ $? -gt 0 ]]
-then
-    echo "Setup had issues"
-    exit 16
-fi
 
 echo "Build completed successfully"
