@@ -3,7 +3,11 @@
 python3 -m venv .
 
 echo "Updating patch version number"
-bumpversion patch
+if ! bumpversion patch
+then
+    echo "bumpversion failed, package not updated"
+    exit 16
+fi
 
 echo "Building distribution file"
 rm -rf ./dist

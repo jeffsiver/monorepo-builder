@@ -46,6 +46,6 @@ then
 fi
 
 echo "Collecting test coverage"
-pytest --cov-report term --cov=monorepo_builder monorepo_builder/tests
+pytest --cov-report term --cov=monorepo_builder tests
 
 echo "Build completed successfully"
