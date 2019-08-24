@@ -42,7 +42,7 @@ class ProjectBuildRequests(list, List[ProjectBuildRequest]):
         return build_requests
 
     @staticmethod
-    def standard_projects(projects: Projects):
+    def standard_projects(projects: Projects) -> "ProjectBuildRequests":
         build_requests = ProjectBuildRequests()
         build_requests.extend(
             [
@@ -54,8 +54,14 @@ class ProjectBuildRequests(list, List[ProjectBuildRequest]):
         return build_requests
 
     @property
-    def success(self):
+    def success(self) -> bool:
         return len(self) == 0 or all([request.run_successful for request in self])
+
+    @property
+    def failed(self) -> "ProjectBuildRequests":
+        return ProjectBuildRequests(
+            [request for request in self if request.run_successful is False]
+        )
 
 
 class BuildExecutor:

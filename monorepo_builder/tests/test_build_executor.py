@@ -83,6 +83,17 @@ class TestProjectBuildRequests:
 
         assert requests.success is False
 
+    def test_failed_builds(self):
+        request1 = MagicMock(spec=ProjectBuildRequest, run_successful=False)
+        request2 = MagicMock(spec=ProjectBuildRequest, run_successful=True)
+        requests = ProjectBuildRequests()
+        requests.extend([request1, request2])
+
+        result = requests.failed
+
+        assert len(result) == 1
+        assert request1 in result
+
 
 class TestBuildExecutor:
     def test_execute_builds(self, mocker):

@@ -43,7 +43,9 @@ class Runner:
             write_to_console("All builds completed successfully, build file updated")
             ProjectListManager().save_project_list(projects)
         else:
-            write_to_console("One of more builds failed", color="red")
+            write_to_console("Builds failed", color="red")
+            for build_request in build_requests.failed:
+                write_to_console(f"{build_request.project.name} failed")
         write_to_console("Completed", color="blue")
 
 
