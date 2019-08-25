@@ -11,9 +11,9 @@ setup(
     install_requires=["Click"],
     python_requires=">=3.7",
     classifiers=[
-      "Programming Language :: Python :: 3.7",
-      "Programming Language :: Python :: 3.8",
-      "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "License :: OSI Approved :: MIT License",
     ],
     entry_points="""
         [console_scripts]

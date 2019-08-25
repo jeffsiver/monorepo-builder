@@ -1,7 +1,8 @@
+from pathlib import Path
 from unittest.mock import MagicMock
 
 from monorepo_builder.build_executor import ProjectBuildRequests
-from monorepo_builder.configuration import ConfigurationManager
+from monorepo_builder.configuration import ConfigurationManager, Configuration
 from monorepo_builder.project_list import ProjectListManager, Projects
 from monorepo_builder.projects import Project
 from monorepo_builder.runner import BuildRunner, Runner
@@ -16,14 +17,28 @@ class TestRunner:
         requests = MagicMock(spec=ProjectBuildRequests)
         do_builds_mock = mocker.patch.object(Runner, "do_builds", return_value=requests)
         finish_builds_mock = mocker.patch.object(Runner, "finish_builds")
-        configuration_load_mock = mocker.patch.object(ConfigurationManager, "load")
+        setup_mock = mocker.patch.object(Runner, "setup")
 
         Runner.run()
 
         gather_projects_mock.assert_called_once()
         do_builds_mock.assert_called_once_with(projects)
         finish_builds_mock.assert_called_once_with(projects, requests)
+        setup_mock.assert_called_once()
+
+    def test_setup(self, mocker):
+        mocker.patch("monorepo_builder.runner.write_to_console")
+        configuration_load_mock = mocker.patch.object(ConfigurationManager, "load")
+        configuration = MagicMock(spec=Configuration, installers_folder="here")
+        mocker.patch.object(ConfigurationManager, "get", return_value=configuration)
+        path_mock = mocker.patch.object(Path, "__init__", return_value=None)
+        mkdir_mock = mocker.patch.object(Path, "mkdir")
+
+        Runner().setup()
+
         configuration_load_mock.assert_called_once_with("config.json")
+        path_mock.assert_called_once_with("here")
+        mkdir_mock.assert_called_once_with(exist_ok=True)
 
     def test_gather_projects(self, mocker):
         mocker.patch("monorepo_builder.runner.write_to_console")
@@ -102,16 +117,6 @@ class TestRunner:
         requests.extend.assert_called_once_with(std_requests)
 
     def test_finish_builds_on_success(self, mocker):
-        projects = MagicMock(spec=Projects)
-        requests = MagicMock(spec=ProjectBuildRequests, success=True)
-        save_project_list_mock = mocker.patch(ProjectListManager, "save_project_list")
-
-        Runner().finish_builds(projects, requests)
-
-        save_project_list_mock.assert_called_once_with(projects)
-
-    def test_finish_builds_on_success(self, mocker):
-        mocker.patch("monorepo_builder.runner.write_to_console")
         projects = MagicMock(spec=Projects)
         requests = MagicMock(spec=ProjectBuildRequests, success=True)
         save_project_list_mock = mocker.patch.object(

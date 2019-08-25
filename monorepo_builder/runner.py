@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -18,12 +19,19 @@ class Runner:
     @staticmethod
     def run():
         write_to_console("Starting the build", color="blue")
-        write_to_console("Loading default configuration", color="blue")
-        ConfigurationManager.load("config.json")
         runner = Runner()
+        runner.setup()
         projects = runner.gather_projects()
         build_requests = runner.do_builds(projects)
         runner.finish_builds(projects, build_requests)
+
+    def setup(self):
+        write_to_console("Loading default configuration", color="blue")
+        ConfigurationManager.load("config.json")
+
+        write_to_console("Checking for installer folder")
+        configuration = ConfigurationManager.get()
+        Path(configuration.installers_folder).mkdir(exist_ok=True)
 
     def gather_projects(self) -> Projects:
         write_to_console("Creating Project List", color="blue")

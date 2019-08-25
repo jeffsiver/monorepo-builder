@@ -113,3 +113,6 @@ pyvenv.cfg
 # Mac
 .DS_Store
 .projectlist
+
+# Monorepo folders
+installers/

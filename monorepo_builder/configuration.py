@@ -67,6 +67,12 @@ class Configuration:
     project_list_filename: str = field(
         default=".projectlist", metadata={"config": "projectListFilename"}
     )
+    installers_folder: str = field(
+        default="./installers", metadata={"config": "installerFolder"}
+    )
+    project_distributable_folder: str = field(
+        default="dist", metadata={"config": "projectDistributableFolder"}
+    )
 
     @classmethod
     def build_from_settings(cls, configuration_settings: Dict):
