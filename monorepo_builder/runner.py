@@ -34,7 +34,7 @@ class Runner:
         projects = runner.gather_projects()
         build_requests = runner.do_builds(projects)
         if build_requests.success:
-            runner.finish_builds_on_success(projects)
+            runner.finish_builds_on_success(projects, version)
         else:
             runner.finish_builds_on_failure(build_requests)
         write_to_console("Build complete", color="blue")
@@ -60,10 +60,12 @@ class Runner:
             build_requests.extend(BuildRunner().build_standard_projects(projects))
         return build_requests
 
-    def finish_builds_on_success(self, projects: Projects):
+    def finish_builds_on_success(self, projects: Projects, current_version: str):
         write_to_console("All builds completed successfully, build file updated")
         ProjectListManager().save_project_list(projects)
-        version_list = ProjectVersionManager().build_version_list(projects)
+        version_list = ProjectVersionManager().build_version_list(
+            projects, current_version
+        )
         ProjectVersionManager().save_version_list(version_list)
 
     def finish_builds_on_failure(self, build_requests: ProjectBuildRequests):

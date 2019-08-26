@@ -24,7 +24,7 @@ class TestRunner:
 
         gather_projects_mock.assert_called_once()
         do_builds_mock.assert_called_once_with(projects)
-        finish_builds_mock.assert_called_once_with(projects)
+        finish_builds_mock.assert_called_once_with(projects, "1.0")
         setup_mock.assert_called_once()
 
     def test_run_build_fails(self, mocker):
@@ -147,10 +147,10 @@ class TestRunner:
             ProjectVersionManager, "save_version_list"
         )
 
-        Runner().finish_builds_on_success(projects)
+        Runner().finish_builds_on_success(projects, "vers")
 
         save_project_list_mock.assert_called_once_with(projects)
-        build_version_list_mock.assert_called_once_with(projects)
+        build_version_list_mock.assert_called_once_with(projects, "vers")
         save_version_list_mock.assert_called_once_with(version_list)
 
     def test_finish_builds_on_failure(self, mocker):
