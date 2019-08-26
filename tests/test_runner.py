@@ -6,6 +6,7 @@ from monorepo_builder.configuration import ConfigurationManager, Configuration
 from monorepo_builder.project_list import ProjectListManager, Projects
 from monorepo_builder.projects import Project
 from monorepo_builder.runner import BuildRunner, Runner
+from monorepo_builder.version import ProjectVersionManager, ProjectVersions
 
 
 class TestRunner:
@@ -53,7 +54,7 @@ class TestRunner:
 
         Runner().setup()
 
-        configuration_load_mock.assert_called_once_with("config.json")
+        configuration_load_mock.assert_called_once_with("monorepo-builder-config.json")
         path_mock.assert_called_once_with("here")
         mkdir_mock.assert_called_once_with(exist_ok=True)
 
@@ -138,10 +139,19 @@ class TestRunner:
         save_project_list_mock = mocker.patch.object(
             ProjectListManager, "save_project_list"
         )
+        version_list = MagicMock(spec=ProjectVersions)
+        build_version_list_mock = mocker.patch.object(
+            ProjectVersionManager, "build_version_list", return_value=version_list
+        )
+        save_version_list_mock = mocker.patch.object(
+            ProjectVersionManager, "save_version_list"
+        )
 
         Runner().finish_builds_on_success(projects)
 
         save_project_list_mock.assert_called_once_with(projects)
+        build_version_list_mock.assert_called_once_with(projects)
+        save_version_list_mock.assert_called_once_with(version_list)
 
     def test_finish_builds_on_failure(self, mocker):
         mocker.patch("monorepo_builder.runner.write_to_console")

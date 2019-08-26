@@ -24,10 +24,17 @@ class ProjectVersionManager:
         project_versions = ProjectVersions()
         previous_project_versions = self.load_previous_version_list()
         for project in projects:
-            project_versions[project.project_path] = self._calculate_version(project, current_version, previous_project_versions)
+            project_versions[project.project_path] = self._calculate_version(
+                project, current_version, previous_project_versions
+            )
         return project_versions
 
-    def _calculate_version(self, project: Project, current_version: str, previous_project_versions: ProjectVersions) -> str:
+    def _calculate_version(
+        self,
+        project: Project,
+        current_version: str,
+        previous_project_versions: ProjectVersions,
+    ) -> str:
         if project.needs_build:
             return current_version
         if project.project_path in previous_project_versions:

@@ -9,10 +9,18 @@ from monorepo_builder.configuration import ConfigurationManager
 from monorepo_builder.console import write_to_console
 from monorepo_builder.project_list import ProjectListManager, Projects
 from monorepo_builder.projects import Project
+from monorepo_builder.version import ProjectVersionManager
 
 
 @click.command()
-@click.option("--version", envvar="MONOREPO-BUILD-VERSION", default="1.0.0", show_envvar=True, required=True, prompt=True, )
+@click.option(
+    "--version",
+    envvar="MONOREPO-BUILD-VERSION",
+    default="1.0.0",
+    show_envvar=True,
+    required=True,
+    prompt=True,
+)
 def run_build(version):
     Runner.run(version)
 
@@ -33,7 +41,7 @@ class Runner:
 
     def setup(self):
         write_to_console("Loading default configuration", color="blue")
-        ConfigurationManager.load("config.json")
+        ConfigurationManager.load("monorepo-builder-config.json")
 
         write_to_console("Checking for installer folder")
         configuration = ConfigurationManager.get()
@@ -55,6 +63,8 @@ class Runner:
     def finish_builds_on_success(self, projects: Projects):
         write_to_console("All builds completed successfully, build file updated")
         ProjectListManager().save_project_list(projects)
+        version_list = ProjectVersionManager().build_version_list(projects)
+        ProjectVersionManager().save_version_list(version_list)
 
     def finish_builds_on_failure(self, build_requests: ProjectBuildRequests):
         write_to_console("Builds failed", color="red")
