@@ -17,6 +17,6 @@ setup(
     ],
     entry_points="""
         [console_scripts]
-        run-build=monorepo_builder.runner:run_build
+        monorepo-build=monorepo_builder.runner:run_build
     """,
 )

@@ -73,6 +73,9 @@ class Configuration:
     project_distributable_folder: str = field(
         default="dist", metadata={"config": "projectDistributableFolder"}
     )
+    version_list_filename: str = field(
+        default=".versionlist", metadata={"config": "versionListFilename"}
+    )
 
     @classmethod
     def build_from_settings(cls, configuration_settings: Dict):

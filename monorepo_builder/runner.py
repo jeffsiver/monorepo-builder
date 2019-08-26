@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -11,19 +12,24 @@ from monorepo_builder.projects import Project
 
 
 @click.command()
-def run_build():
-    Runner.run()
+@click.option("--version", envvar="MONOREPO-BUILD-VERSION", default="1.0.0", show_envvar=True, required=True, prompt=True, )
+def run_build(version):
+    Runner.run(version)
 
 
 class Runner:
     @staticmethod
-    def run():
+    def run(version: str):
         write_to_console("Starting the build", color="blue")
         runner = Runner()
         runner.setup()
         projects = runner.gather_projects()
         build_requests = runner.do_builds(projects)
-        runner.finish_builds(projects, build_requests)
+        if build_requests.success:
+            runner.finish_builds_on_success(projects)
+        else:
+            runner.finish_builds_on_failure(build_requests)
+        write_to_console("Build complete", color="blue")
 
     def setup(self):
         write_to_console("Loading default configuration", color="blue")
@@ -46,15 +52,14 @@ class Runner:
             build_requests.extend(BuildRunner().build_standard_projects(projects))
         return build_requests
 
-    def finish_builds(self, projects: Projects, build_requests: ProjectBuildRequests):
-        if build_requests.success:
-            write_to_console("All builds completed successfully, build file updated")
-            ProjectListManager().save_project_list(projects)
-        else:
-            write_to_console("Builds failed", color="red")
-            for build_request in build_requests.failed:
-                write_to_console(f"{build_request.project.name} failed")
-        write_to_console("Completed", color="blue")
+    def finish_builds_on_success(self, projects: Projects):
+        write_to_console("All builds completed successfully, build file updated")
+        ProjectListManager().save_project_list(projects)
+
+    def finish_builds_on_failure(self, build_requests: ProjectBuildRequests):
+        write_to_console("Builds failed", color="red")
+        for build_request in build_requests.failed:
+            write_to_console(f"{build_request.project.name} failed")
 
 
 class BuildRunner:
@@ -64,7 +69,7 @@ class BuildRunner:
             previous_project = self._get_previous_project_by_name(
                 previous_projects, project.name
             )
-            project.identify_if_build_needed(previous_project)
+            project.mark_if_build_needed(previous_project)
 
     def _get_previous_project_by_name(
         self, previous_projects: Optional[Projects], name: str

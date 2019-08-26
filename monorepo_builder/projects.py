@@ -68,10 +68,12 @@ class Project:
             return ProjectType.Library
         return ProjectType.Standard
 
-    def identify_if_build_needed(self, project_from_last_run: "Optional[Project]"):
-        self.needs_build = self._is_build_needed(project_from_last_run)
+    def mark_if_build_needed(self, project_from_last_run: "Optional[Project]"):
+        self.needs_build = self._did_files_change_from_last_run(project_from_last_run)
 
-    def _is_build_needed(self, project_from_last_run: "Optional[Project]") -> bool:
+    def _did_files_change_from_last_run(
+        self, project_from_last_run: "Optional[Project]"
+    ) -> bool:
         if not project_from_last_run:
             return True
         if len(self.file_list) != len(project_from_last_run.file_list):

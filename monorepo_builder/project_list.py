@@ -22,15 +22,15 @@ class Projects(list, List[Project]):
     @staticmethod
     def projects_factory():
         projects = Projects()
-        projects._get_library_projects()
-        projects._get_standard_projects()
+        projects._build_library_project_list()
+        projects._build_standard_project_list()
         return projects
 
-    def _get_library_projects(self,):
+    def _build_library_project_list(self,):
         library_root_folder = f"{ConfigurationManager().get().monorepo_root_folder}/{ConfigurationManager().get().library_folder_name}"
         self.extend(ProjectListFactory().get_projects_in_folder(library_root_folder))
 
-    def _get_standard_projects(self,):
+    def _build_standard_project_list(self,):
         for standard_folder_name in ConfigurationManager().get().standard_folder_list:
             standard_folder = f"{ConfigurationManager().get().monorepo_root_folder}/{standard_folder_name}"
             self.extend(ProjectListFactory().get_projects_in_folder(standard_folder))

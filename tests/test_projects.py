@@ -55,7 +55,7 @@ class TestProject:
             spec=Project, file_list=[previous_file_1, previous_file_2]
         )
 
-        current_project.identify_if_build_needed(project_from_last_run)
+        current_project.mark_if_build_needed(project_from_last_run)
 
         assert current_project.needs_build is False
 
@@ -68,7 +68,7 @@ class TestProject:
             spec=Project, file_list=[previous_file_2, previous_file_1]
         )
 
-        current_project.identify_if_build_needed(project_from_last_run)
+        current_project.mark_if_build_needed(project_from_last_run)
 
         assert current_project.needs_build is True
 
@@ -79,7 +79,7 @@ class TestProject:
             project_path="here", file_list=[current_file_1, current_file_2]
         )
 
-        current_project.identify_if_build_needed(None)
+        current_project.mark_if_build_needed(None)
 
         assert current_project.needs_build is True
 
@@ -95,7 +95,7 @@ class TestProject:
             spec=Project, file_list=[previous_file_1, previous_file_2]
         )
 
-        current_project.identify_if_build_needed(project_from_last_run)
+        current_project.mark_if_build_needed(project_from_last_run)
 
         assert current_project.needs_build is True
 
@@ -111,7 +111,7 @@ class TestProject:
             spec=Project, file_list=[previous_file_1, previous_file_2]
         )
 
-        current_project.identify_if_build_needed(project_from_last_run)
+        current_project.mark_if_build_needed(project_from_last_run)
 
         assert current_project.needs_build is True
 
