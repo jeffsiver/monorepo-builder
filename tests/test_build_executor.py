@@ -125,7 +125,7 @@ class TestBuildExecutor:
         subprocess_mock.PIPE = "pipe"
         subprocess_mock.STDOUT = "stdout"
         run_result = MagicMock(
-            spec=CompletedProcess, returncode=0, stdout=["one", "two"]
+            spec=CompletedProcess, returncode=0,
         )
         subprocess_mock.run.return_value = run_result
         project = MagicMock(spec=Project, project_path="here", needs_build=True)
@@ -135,9 +135,8 @@ class TestBuildExecutor:
 
         assert build_request.run_successful is True
         assert build_request.build_status == BuildRequestStatus.Complete
-        assert build_request.console_output == ["one", "two"]
         subprocess_mock.run.assert_called_once_with(
-            ["./build.sh"], cwd="here", stdout="pipe", stderr="stdout"
+            ["./build.sh"], cwd="here",
         )
 
     def test_run_build_failed(self, mocker):
@@ -146,7 +145,7 @@ class TestBuildExecutor:
         subprocess_mock.PIPE = "pipe"
         subprocess_mock.STDOUT = "stdout"
         run_result = MagicMock(
-            spec=CompletedProcess, returncode=1, stdout=["one", "two"]
+            spec=CompletedProcess, returncode=1
         )
         subprocess_mock.run.return_value = run_result
         project = MagicMock(spec=Project, project_path="here", needs_build=True)
@@ -156,9 +155,8 @@ class TestBuildExecutor:
 
         assert build_request.run_successful is False
         assert build_request.build_status == BuildRequestStatus.Complete
-        assert build_request.console_output == ["one", "two"]
         subprocess_mock.run.assert_called_once_with(
-            ["./build.sh"], cwd="here", stdout="pipe", stderr="stdout"
+            ["./build.sh"], cwd="here"
         )
 
     def test_run_build_not_needed(self, mocker):

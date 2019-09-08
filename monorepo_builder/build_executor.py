@@ -27,7 +27,6 @@ class ProjectBuildRequest:
         default=BuildRequestStatus.NotStarted, init=False
     )
     run_successful: Optional[bool] = field(default=None, init=False)
-    console_output: List[str] = field(default_factory=list, init=False)
 
 
 class ProjectBuildRequests(list, List[ProjectBuildRequest]):
@@ -89,13 +88,9 @@ class BuildExecutor:
         result = subprocess.run(
             ["./build.sh"],
             cwd=project_build_request.project.project_path,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
         )
         project_build_request.build_status = BuildRequestStatus.Complete
         project_build_request.run_successful = result.returncode == 0
-        project_build_request.console_output = result.stdout
-        write_to_console(project_build_request.console_output)
 
     def copy_distributable(self, project_build_request: ProjectBuildRequest):
         configuration = ConfigurationManager.get()
