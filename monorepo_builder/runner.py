@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 import click
 
@@ -76,12 +76,34 @@ class Runner:
 
 class BuildRunner:
     def identify_projects_needing_build(self, projects: Projects):
+        self._need_build_when_files_changed(projects)
+        self._identify_projects_to_build_due_to_library_changes(projects)
+
+    def _need_build_when_files_changed(self, projects: Projects):
         previous_projects = ProjectListManager().load_list_from_last_successful_run()
         for project in projects:
             previous_project = self._get_previous_project_by_name(
                 previous_projects, project.name
             )
-            project.mark_if_build_needed(previous_project)
+            project.set_needs_build_due_to_file_changes(previous_project)
+
+    def _identify_projects_to_build_due_to_library_changes(self, projects: Projects):
+        library_project_names = self._get_names_for_library_projects_requiring_build(
+            projects
+        )
+        for project in projects.standard_projects:
+            project.set_needs_build_due_to_updated_library_reference(
+                library_project_names
+            )
+
+    def _get_names_for_library_projects_requiring_build(
+        self, projects: Projects
+    ) -> List[str]:
+        library_project_names: List[str] = []
+        for library_project in projects.library_projects:
+            if library_project.needs_build:
+                library_project_names.append(library_project.name)
+        return library_project_names
 
     def _get_previous_project_by_name(
         self, previous_projects: Optional[Projects], name: str

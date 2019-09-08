@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -60,7 +61,8 @@ class Project:
 
     @property
     def name(self) -> str:
-        return self.path.name
+        path = self.path
+        return path.name.replace("_", "-")
 
     @property
     def project_type(self) -> ProjectType:
@@ -68,8 +70,19 @@ class Project:
             return ProjectType.Library
         return ProjectType.Standard
 
-    def mark_if_build_needed(self, project_from_last_run: "Optional[Project]"):
+    def set_needs_build(self):
+        self.needs_build = True
+
+    def set_needs_build_due_to_file_changes(
+        self, project_from_last_run: "Optional[Project]"
+    ):
         self.needs_build = self._did_files_change_from_last_run(project_from_last_run)
+
+    def set_needs_build_due_to_updated_library_reference(
+        self, updated_library_names: List[str]
+    ):
+        if self.project_references_updated_library(updated_library_names):
+            self.set_needs_build()
 
     def _did_files_change_from_last_run(
         self, project_from_last_run: "Optional[Project]"
@@ -88,3 +101,30 @@ class Project:
             if current.last_changed_time != previous.last_changed_time:
                 return True
         return False
+
+    def project_references_updated_library(
+        self, library_project_names: List[str]
+    ) -> bool:
+        ## Should be updated to parse the requirements to match against entire project names.
+        ## For example, a library project name of "thing" will match to a requirements of "something".
+        requirements = self.read_requirements_file()
+        for library_project_name in library_project_names:
+            if library_project_name in requirements:
+                return True
+        return False
+
+    def read_requirements_file(self) -> str:
+        requirement_filenames = [
+            os.path.join(self.project_path, "requirements.txt"),
+            os.path.join(self.project_path, "package.json"),
+        ]
+        for requirement_filename in requirement_filenames:
+            requirement_file_path = Path(requirement_filename)
+            if requirement_file_path.exists():
+                return requirement_file_path.read_text()
+        raise RequirementsFileNotFoundException(self)
+
+
+class RequirementsFileNotFoundException(Exception):
+    def __init__(self, project: Project):
+        super().__init__(f"Requirements file not found for {project.name}")

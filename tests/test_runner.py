@@ -162,14 +162,22 @@ class TestRunner:
 
 class TestBuildRunner:
     def test_set_project_needs_build_flag(self, mocker):
-        project_1 = MagicMock(spec=Project)
-        project_1.name = "one"
-        project_2 = MagicMock(spec=Project)
-        project_2.name = "two"
-        project_3 = MagicMock(spec=Project)
-        project_3.name = "three"
-        projects = Projects()
-        projects.extend([project_1, project_2, project_3])
+        lib_proj_1 = MagicMock(spec=Project, needs_build=True)
+        lib_proj_1.name = "one"
+        lib_proj_2 = MagicMock(spec=Project, needs_build=False)
+        lib_proj_2.name = "libtwo"
+        std_proj_1 = MagicMock(spec=Project)
+        std_proj_1.name = "two"
+        std_proj_2 = MagicMock(spec=Project)
+        std_proj_2.name = "three"
+        projects = MagicMock(
+            spec=Projects,
+            **{
+                "__iter__.return_value": [lib_proj_1, std_proj_1, std_proj_2],
+                "library_projects": [lib_proj_1, lib_proj_2],
+                "standard_projects": [std_proj_1, std_proj_2],
+            },
+        )
         previous_1 = MagicMock(spec=Project)
         previous_1.name = "two"
         previous_2 = MagicMock(spec=Project)
@@ -184,6 +192,16 @@ class TestBuildRunner:
 
         BuildRunner().identify_projects_needing_build(projects)
 
-        project_1.mark_if_build_needed.assert_called_once_with(previous_2)
-        project_2.mark_if_build_needed.assert_called_once_with(previous_1)
-        project_3.mark_if_build_needed.assert_called_once_with(None)
+        lib_proj_1.set_needs_build_due_to_file_changes.assert_called_once_with(
+            previous_2
+        )
+        std_proj_1.set_needs_build_due_to_file_changes.assert_called_once_with(
+            previous_1
+        )
+        std_proj_2.set_needs_build_due_to_file_changes.assert_called_once_with(None)
+        std_proj_1.set_needs_build_due_to_updated_library_reference.assert_called_once_with(
+            ["one"]
+        )
+        std_proj_2.set_needs_build_due_to_updated_library_reference.assert_called_once_with(
+            ["one"]
+        )
