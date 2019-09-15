@@ -7,8 +7,13 @@ from monorepo_builder.build_executor import (
     ProjectBuildRequest,
     BuildRequestStatus,
     BuildExecutor,
+    InstallerManager,
 )
-from monorepo_builder.configuration import ConfigurationManager, Configuration
+from monorepo_builder.configuration import (
+    ConfigurationManager,
+    Configuration,
+    InstallerLocationType,
+)
 from monorepo_builder.project_list import Projects
 from monorepo_builder.projects import Project, ProjectType
 
@@ -101,7 +106,7 @@ class TestBuildExecutor:
     def test_execute_builds(self, mocker):
         run_build_mock = mocker.patch.object(BuildExecutor, "run_build")
         copy_distributable_mock = mocker.patch.object(
-            BuildExecutor, "copy_distributable"
+            InstallerManager, "copy_installer"
         )
         project_build_requests = ProjectBuildRequests()
         project_1 = MagicMock(spec=Project, project_type=ProjectType.Library)
@@ -124,9 +129,7 @@ class TestBuildExecutor:
         subprocess_mock = mocker.patch("monorepo_builder.build_executor.subprocess")
         subprocess_mock.PIPE = "pipe"
         subprocess_mock.STDOUT = "stdout"
-        run_result = MagicMock(
-            spec=CompletedProcess, returncode=0,
-        )
+        run_result = MagicMock(spec=CompletedProcess, returncode=0)
         subprocess_mock.run.return_value = run_result
         project = MagicMock(spec=Project, project_path="here", needs_build=True)
         build_request = MagicMock(spec=ProjectBuildRequest, project=project)
@@ -135,18 +138,14 @@ class TestBuildExecutor:
 
         assert build_request.run_successful is True
         assert build_request.build_status == BuildRequestStatus.Complete
-        subprocess_mock.run.assert_called_once_with(
-            ["./build.sh"], cwd="here",
-        )
+        subprocess_mock.run.assert_called_once_with(["./build.sh"], cwd="here")
 
     def test_run_build_failed(self, mocker):
         mocker.patch("monorepo_builder.build_executor.write_to_console")
         subprocess_mock = mocker.patch("monorepo_builder.build_executor.subprocess")
         subprocess_mock.PIPE = "pipe"
         subprocess_mock.STDOUT = "stdout"
-        run_result = MagicMock(
-            spec=CompletedProcess, returncode=1
-        )
+        run_result = MagicMock(spec=CompletedProcess, returncode=1)
         subprocess_mock.run.return_value = run_result
         project = MagicMock(spec=Project, project_path="here", needs_build=True)
         build_request = MagicMock(spec=ProjectBuildRequest, project=project)
@@ -155,9 +154,7 @@ class TestBuildExecutor:
 
         assert build_request.run_successful is False
         assert build_request.build_status == BuildRequestStatus.Complete
-        subprocess_mock.run.assert_called_once_with(
-            ["./build.sh"], cwd="here"
-        )
+        subprocess_mock.run.assert_called_once_with(["./build.sh"], cwd="here")
 
     def test_run_build_not_needed(self, mocker):
         subprocess_mock = mocker.patch("monorepo_builder.build_executor.subprocess")
@@ -169,11 +166,14 @@ class TestBuildExecutor:
         assert build_request.build_status == BuildRequestStatus.NotNeeded
         subprocess_mock.run.assert_not_called()
 
-    def test_copy_distributable(self, mocker):
+
+class TestInstallerManager:
+    def test_copy_distributable_to_folder(self, mocker):
         configuration = MagicMock(
             spec=Configuration,
-            installers_folder="to",
+            installer_folder="to",
             project_distributable_folder="dist",
+            installer_location_type=InstallerLocationType.folder,
         )
         mocker.patch.object(ConfigurationManager, "get", return_value=configuration)
         project = MagicMock(spec=Project, project_path="from")
@@ -183,7 +183,33 @@ class TestBuildExecutor:
         mocker.patch.object(Path, "iterdir", return_value=[file])
         copy_mock = mocker.patch("monorepo_builder.build_executor.shutil.copy")
 
-        BuildExecutor().copy_distributable(project_build_request)
+        InstallerManager().copy_installer(project_build_request)
 
         path_mock.assert_called_once_with("from/dist")
         copy_mock.assert_called_once_with("installer", "to")
+
+    def test_copy_distributable_to_s3(self, mocker):
+        configuration = MagicMock(
+            spec=Configuration,
+            installer_folder="to",
+            installer_s3_bucket="bucket",
+            project_distributable_folder="dist",
+            installer_location_type=InstallerLocationType.s3,
+        )
+        mocker.patch.object(ConfigurationManager, "get", return_value=configuration)
+        project = MagicMock(spec=Project, project_path="from")
+        project_build_request = MagicMock(spec=ProjectBuildRequest, project=project)
+        file = MagicMock(spec=Path, **{"__str__.return_value": "installer"})
+        file.name = "Ismael"
+        path_mock = mocker.patch.object(Path, "__init__", return_value=None)
+        mocker.patch.object(Path, "iterdir", return_value=[file])
+        bucket_mock = MagicMock()
+        client_mock = mocker.patch("monorepo_builder.build_executor.boto3.client")
+        client_mock.return_value.Bucket.return_value = bucket_mock
+
+        InstallerManager().copy_installer(project_build_request)
+
+        path_mock.assert_called_once_with("from/dist")
+        client_mock.assert_called_once_with("s3")
+        client_mock.return_value.Bucket.assert_called_once_with("bucket")
+        bucket_mock.upload_file.assert_called_once_with("installer", "Ismael")

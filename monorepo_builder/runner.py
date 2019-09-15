@@ -45,7 +45,7 @@ class Runner:
 
         write_to_console("Checking for installer folder")
         configuration = ConfigurationManager.get()
-        Path(configuration.installers_folder).mkdir(exist_ok=True)
+        Path(configuration.installer_folder).mkdir(exist_ok=True)
 
     def gather_projects(self) -> Projects:
         write_to_console("Creating Project List", color="blue")

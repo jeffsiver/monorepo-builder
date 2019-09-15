@@ -5,9 +5,14 @@ from enum import Enum
 from pathlib import Path
 from typing import List, Optional
 
+import boto3
 import click
 
-from monorepo_builder.configuration import ConfigurationManager
+from monorepo_builder.configuration import (
+    ConfigurationManager,
+    InstallerLocationType,
+    Configuration,
+)
 from monorepo_builder.console import write_to_console
 from monorepo_builder.project_list import Projects
 from monorepo_builder.projects import Project, ProjectType
@@ -73,7 +78,7 @@ class BuildExecutor:
         for project_build_request in project_build_requests:
             self.run_build(project_build_request)
             if project_build_request.project.project_type == ProjectType.Library:
-                self.copy_distributable(project_build_request)
+                InstallerManager().copy_installer(project_build_request)
         return project_build_requests
 
     def run_build(self, project_build_request: ProjectBuildRequest):
@@ -86,14 +91,30 @@ class BuildExecutor:
             return
 
         result = subprocess.run(
-            ["./build.sh"],
-            cwd=project_build_request.project.project_path,
+            ["./build.sh"], cwd=project_build_request.project.project_path
         )
         project_build_request.build_status = BuildRequestStatus.Complete
         project_build_request.run_successful = result.returncode == 0
 
-    def copy_distributable(self, project_build_request: ProjectBuildRequest):
+
+class InstallerManager:
+    def __init__(self):
+        self._s3_bucket = None
+
+    def copy_installer(self, project_build_request: ProjectBuildRequest):
         configuration = ConfigurationManager.get()
         dist_folder = f"{project_build_request.project.project_path}/{configuration.project_distributable_folder}"
         for installer in Path(dist_folder).iterdir():
-            shutil.copy(str(installer), configuration.installers_folder)
+            if configuration.installer_location_type == InstallerLocationType.folder:
+                shutil.copy(str(installer), configuration.installer_folder)
+            if configuration.installer_location_type == InstallerLocationType.s3:
+                self._get_s3_bucket(configuration).upload_file(
+                    str(installer), installer.name
+                )
+
+    def _get_s3_bucket(self, configuration: Configuration):
+        if not self._s3_bucket:
+            self._s3_bucket = boto3.client("s3").Bucket(
+                configuration.installer_s3_bucket
+            )
+        return self._s3_bucket

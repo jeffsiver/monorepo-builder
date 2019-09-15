@@ -47,7 +47,7 @@ class TestRunner:
     def test_setup(self, mocker):
         mocker.patch("monorepo_builder.runner.write_to_console")
         configuration_load_mock = mocker.patch.object(ConfigurationManager, "load")
-        configuration = MagicMock(spec=Configuration, installers_folder="here")
+        configuration = MagicMock(spec=Configuration, installer_folder="here")
         mocker.patch.object(ConfigurationManager, "get", return_value=configuration)
         path_mock = mocker.patch.object(Path, "__init__", return_value=None)
         mkdir_mock = mocker.patch.object(Path, "mkdir")

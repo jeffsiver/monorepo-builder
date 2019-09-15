@@ -1,6 +1,7 @@
 import dataclasses
 import json
 from dataclasses import dataclass, field, Field
+from enum import Enum
 from pathlib import Path
 from typing import List, Dict, Optional
 
@@ -38,6 +39,11 @@ def get_current_folder():
     return str(Path.cwd())
 
 
+class InstallerLocationType(Enum):
+    folder = 1
+    s3 = 2
+
+
 @dataclass
 class Configuration:
     monorepo_root_folder: str = field(
@@ -67,8 +73,15 @@ class Configuration:
     project_list_filename: str = field(
         default=".projectlist", metadata={"config": "projectListFilename"}
     )
-    installers_folder: str = field(
+    installer_location_type: InstallerLocationType = field(
+        default=InstallerLocationType.folder,
+        metadata={"config": "installerLocationType"},
+    )
+    installer_folder: str = field(
         default="./installers", metadata={"config": "installerFolder"}
+    )
+    installer_s3_bucket: str = field(
+        default="", metadata={"config": "installerS3Bucket"}
     )
     project_distributable_folder: str = field(
         default="dist", metadata={"config": "projectDistributableFolder"}
