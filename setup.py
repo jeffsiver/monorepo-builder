@@ -5,7 +5,7 @@ setup(
     author="Jeff Siver",
     author_email="jsiver@celltrak.com",
     description="An opionated builder for CellTrak monorepo's with Python and node projects.",
-    version="0.2.9",
+    version="0.2.10",
     license="MIT",
     packages=find_namespace_packages(include="monorepo_builder.*"),
     install_requires=["Click", "boto3"],
