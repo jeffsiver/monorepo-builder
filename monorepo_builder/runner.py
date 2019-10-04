@@ -4,7 +4,11 @@ from typing import Optional, List
 
 import click
 
-from monorepo_builder.build_executor import BuildExecutor, ProjectBuildRequests
+from monorepo_builder.build_executor import (
+    BuildExecutor,
+    ProjectBuildRequests,
+    InstallerManager,
+)
 from monorepo_builder.configuration import ConfigurationManager
 from monorepo_builder.console import write_to_console
 from monorepo_builder.project_list import ProjectListManager, Projects
@@ -23,6 +27,13 @@ from monorepo_builder.version import ProjectVersionManager
 )
 def run_build(version):
     Runner.run(version)
+
+
+@click.command()
+@click.argument("project-path", type=click.Path())
+def copy_installers(project_path: str):
+    project = Project(project_path=project_path)
+    InstallerManager().copy_installers_to_project(project)
 
 
 class Runner:
