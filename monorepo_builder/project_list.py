@@ -50,13 +50,15 @@ class ProjectListManager:
 
 
 class ProjectListFactory:
-    def get_projects_in_folder(self, folder) -> List[Project]:
+    def get_projects_in_folder(self, folder: str) -> List[Project]:
         if not Path(folder).exists():
             return []
 
         project_list: List[Project] = []
         for project in Path(folder).iterdir():
-            if project.is_dir():
+            if not project.is_dir():
+                continue
+            if self.is_folder_project(project):
                 project_path = str(project)
                 project_list.append(
                     Project(
@@ -64,4 +66,13 @@ class ProjectListFactory:
                         file_list=ProjectFileListBuilder().build(project),
                     )
                 )
+            else:
+                project_list.extend(self.get_projects_in_folder(str(project)))
         return project_list
+
+    def is_folder_project(self, folder: Path) -> bool:
+        if list(folder.glob("requirements.txt")):
+            return True
+        if list(folder.glob("package.json")):
+            return True
+        return False

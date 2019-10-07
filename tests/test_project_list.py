@@ -332,6 +332,9 @@ class TestProjectListFactory:
                 "return_value.exists.return_value": True,
             },
         )
+        is_folder_project_mock = mocker.patch.object(
+            ProjectListFactory, "is_folder_project", side_effect=[True, True]
+        )
         project1_mock = MagicMock(spec=Project)
         project2_mock = MagicMock(spec=Project)
         project_mock = mocker.patch(
@@ -351,6 +354,71 @@ class TestProjectListFactory:
             call(project_path="second", file_list="numbertwo"),
         ]
         assert file_builder_mock.call_args_list == [call(path1_mock), call(path2_mock)]
+        assert is_folder_project_mock.call_args_list == [
+            call(path1_mock),
+            call(path2_mock),
+        ]
+
+    def test_get_projects_from_nested_folder(self, mocker):
+        mocker.patch("monorepo_builder.build_executor.write_to_console")
+        path1_1_mock = MagicMock(
+            **{"is_dir.return_value": True, "__str__.return_value": "first first"}
+        )
+        path1_2_mock = MagicMock(
+            **{"is_dir.return_value": True, "__str__.return_value": "first second"}
+        )
+        path1_mock = MagicMock(
+            **{
+                "is_dir.return_value": True,
+                "__str__.return_value": "first",
+                "return_value.iterdir.return_value": [path1_1_mock, path1_2_mock],
+            }
+        )
+        path_mock = mocker.patch(
+            "monorepo_builder.project_list.Path",
+            **{
+                "return_value.iterdir.side_effect": [
+                    [path1_mock],
+                    [path1_1_mock, path1_2_mock],
+                ],
+                "return_value.exists.return_value": True,
+            },
+        )
+        is_folder_project_mock = mocker.patch.object(
+            ProjectListFactory, "is_folder_project", side_effect=[False, True, True]
+        )
+        project1_mock = MagicMock(spec=Project)
+        project2_mock = MagicMock(spec=Project)
+        project_mock = mocker.patch(
+            "monorepo_builder.project_list.Project",
+            side_effect=[project1_mock, project2_mock],
+        )
+        file_builder_mock = mocker.patch.object(
+            ProjectFileListBuilder, "build", side_effect=["numberone", "numbertwo"]
+        )
+
+        result = ProjectListFactory().get_projects_in_folder("start")
+
+        assert result == [project1_mock, project2_mock]
+        assert path_mock.call_args_list == [
+            call("start"),
+            call("start"),
+            call("first"),
+            call("first"),
+        ]
+        assert project_mock.call_args_list == [
+            call(project_path="first first", file_list="numberone"),
+            call(project_path="first second", file_list="numbertwo"),
+        ]
+        assert file_builder_mock.call_args_list == [
+            call(path1_1_mock),
+            call(path1_2_mock),
+        ]
+        assert is_folder_project_mock.call_args_list == [
+            call(path1_mock),
+            call(path1_1_mock),
+            call(path1_2_mock),
+        ]
 
     def test_get_projects_in_folder_when_folder_not_found(self, mocker):
         mocker.patch("monorepo_builder.build_executor.write_to_console")
@@ -361,3 +429,36 @@ class TestProjectListFactory:
 
         assert result == []
         path_mock.assert_called_once_with("here")
+
+    def test_is_folder_project_for_python(self,):
+        folder_mock = MagicMock(spec=Path)
+        folder_mock.glob.return_value = ["entry"]
+
+        result = ProjectListFactory().is_folder_project(folder_mock)
+
+        assert result is True
+        folder_mock.glob.assert_called_once_with("requirements.txt")
+
+    def test_is_folder_project_for_node(self,):
+        folder_mock = MagicMock(spec=Path)
+        folder_mock.glob.side_effect = [[], ["entry"]]
+
+        result = ProjectListFactory().is_folder_project(folder_mock)
+
+        assert result is True
+        assert folder_mock.glob.call_args_list == [
+            call("requirements.txt"),
+            call("package.json"),
+        ]
+
+    def test_is_folder_project_not_a_project(self,):
+        folder_mock = MagicMock(spec=Path)
+        folder_mock.glob.side_effect = [[], []]
+
+        result = ProjectListFactory().is_folder_project(folder_mock)
+
+        assert result is False
+        assert folder_mock.glob.call_args_list == [
+            call("requirements.txt"),
+            call("package.json"),
+        ]
