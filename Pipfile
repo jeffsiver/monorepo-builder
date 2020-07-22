@@ -11,6 +11,7 @@ black = "*"
 [packages]
 click = "*"
 boto3 = "*"
+bumpversion = "*"
 
 [requires]
 python_version = "3.8"

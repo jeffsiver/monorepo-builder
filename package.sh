@@ -1,20 +1,18 @@
 #!/bin/bash
 
-python3 -m venv .
-
 echo "Updating patch version number"
-if ! bumpversion patch
+if ! pipenv run bumpversion patch
 then
     echo "bumpversion failed, package not updated"
     exit 16
 fi
 
 echo "Building distribution file"
-if ! python setup.py bdist_wheel
+if ! pipenv run python setup.py bdist_wheel
 then
     echo "Package build failed"
     exit 16
 fi
 
 echo "Removing older installers"
-python setup.py rotate -m *.whl -d dist -k 1
+pipenv run python setup.py rotate -m *.whl -d dist -k 1
